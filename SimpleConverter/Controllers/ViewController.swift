@@ -3,7 +3,7 @@
 //  SimpleConverter
 //
 //  Created by Денис Чупров on 25.04.2022.
-//pull
+
 
 import UIKit
 
@@ -14,28 +14,29 @@ class ViewController: UIViewController {
         return .portrait
     }
     
-    enum selectedCurrency {
-        case RUB
-        case USD
-        case EUR
-        case CNY
-        case CHF
+    enum selectedCurrency : String {
+        case RUB = "₽"
+        case USD  = "$"
+        case EUR  = "€"
+        case CNY = "¥"
+        case CHF  = "₣"
     }
     
     var selectedButton = selectedCurrency.RUB
+    var selectedResultButton = selectedCurrency.USD
         
-    let rurButton = UIButton(title: "₽")
-    let dollarButtont = UIButton(title: "$")
-    let euroButton = UIButton(title: "€")
-    let yuanButton = UIButton(title: "¥")
-    let fruncButton = UIButton(title: "₣")
+    let rurButton = UIButton(title: selectedCurrency.RUB.rawValue)
+    let dollarButtont = UIButton(title: selectedCurrency.USD.rawValue)
+    let euroButton = UIButton(title: selectedCurrency.EUR.rawValue)
+    let yuanButton = UIButton(title: selectedCurrency.CNY.rawValue)
+    let fruncButton = UIButton(title: selectedCurrency.CHF.rawValue)
     
     
-    let rurResultButton = UIButton(title: "₽")
-    let dollarResultButtont = UIButton(title: "$")
-    let euroResultButton = UIButton(title: "€")
-    let yuanResultButton = UIButton(title: "¥")
-    let fruncResultButton = UIButton(title: "₣")
+    let rurResultButton = UIButton(title: selectedCurrency.RUB.rawValue)
+    let dollarResultButtont = UIButton(title: selectedCurrency.USD.rawValue)
+    let euroResultButton = UIButton(title: selectedCurrency.EUR.rawValue)
+    let yuanResultButton = UIButton(title: selectedCurrency.CNY.rawValue)
+    let fruncResultButton = UIButton(title: selectedCurrency.CHF.rawValue)
     
     
     let mainView : UIView = {
@@ -63,9 +64,9 @@ class ViewController: UIViewController {
         return textField
     }()
     
-    let nominalLAbel = UILabel(font: "Thonburi", size: 26, text: "₽")
+    let nominalLAbel = UILabel(font: "Thonburi", size: 26, text: selectedCurrency.RUB.rawValue)
     
-    let resultLabet = UILabel(font: "Thonburi", size: 26, text: "0 $")
+    let resultLabet = UILabel(font: "Thonburi", size: 26, text: "0 \(selectedCurrency.USD.rawValue)")
     
     let startView : UIView = {
         let startView = UIView()
@@ -113,14 +114,19 @@ class ViewController: UIViewController {
         
         NetworkManager.shared.getData(url: "https://cdn.cur.su/api/latest.json") { [self] money in
             courses = money!.rates
+            print(courses)
         }
  
     // For start
-        
+        tryConnection(time: 1.5)
         mainView.isUserInteractionEnabled = false
         mainView.alpha = 0.8
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        
+        
+    }
+    func tryConnection(time : Double) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + time) {
             if self.courses.isEmpty == false {
                 self.activityINdicator.stopAnimating()
                 self.doneView.isHidden = false
@@ -140,9 +146,7 @@ class ViewController: UIViewController {
                 self.labelForStartView.text = "No data. Please check the connection"
             }
         }
-        
     }
-    
     private func setupConstraints() {
         view.addSubview(mainView)
      
@@ -261,6 +265,14 @@ class ViewController: UIViewController {
     }
     
     @objc private func resultButtonTapped(sender: UIButton) {
+        switch sender {
+        case rurResultButton : selectedResultButton = selectedCurrency.RUB
+        case dollarResultButtont : selectedResultButton = selectedCurrency.USD
+        case euroResultButton : selectedResultButton = selectedCurrency.EUR
+        case yuanResultButton : selectedResultButton =  selectedCurrency.CNY
+        case fruncResultButton : selectedResultButton = selectedCurrency.CHF
+        default : break
+        }
         let resultButtonArray = [dollarResultButtont, euroResultButton, rurResultButton, yuanResultButton, fruncResultButton]
         sender.scaleAnimation()
         resultLabet.scaleAnimation()
@@ -274,7 +286,7 @@ class ViewController: UIViewController {
                 button.backgroundColor = .systemGray5
             }
         }
-        result(sender: sender)
+        result(sender: selectedResultButton)
         
     }
   
@@ -387,60 +399,61 @@ class ViewController: UIViewController {
  
     }
     
-    func result(sender : UIButton) {
-    guard let amount = Double(textField.text!) else { return }
-    // EURGBP = (USDGBP / USDEUR) = (0.73 / 0.87) = 0.84
+    func result(sender : selectedCurrency) {
+        guard let amount = Double(textField.text!) else { return }
+        // EURGBP = (USDGBP / USDEUR) = (0.73 / 0.87) = 0.84
 
-    if selectedButton == .RUB  {
-        switch sender {
-        case dollarResultButtont : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["RUB"]!) * amount)) $"
-        case euroResultButton : resultLabet.text =  "\( String(format: "%.2f",  (courses["EUR"]! / courses["RUB"]!) * amount)) €"
-        case yuanResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["CNY"]! / courses["RUB"]!) * amount )) ¥"
-        case fruncResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["CHF"]! / courses["RUB"]!) * amount)) ₣"
+        if selectedButton == .RUB  {
+            switch selectedResultButton {
+            case .USD : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["RUB"]!) * amount)) $"
+            case .EUR : resultLabet.text =  "\( String(format: "%.2f",  (courses["EUR"]! / courses["RUB"]!) * amount)) €"
+            case .CNY : resultLabet.text =  "\( String(format: "%.2f", (courses["CNY"]! / courses["RUB"]!) * amount )) ¥"
+            case .CHF : resultLabet.text =  "\( String(format: "%.2f", (courses["CHF"]! / courses["RUB"]!) * amount)) ₣"
+            default: break
+            }
+        }
+
+        if selectedButton == .USD {
+        switch selectedResultButton {
+        case .RUB : resultLabet.text = "\(String(format: "%.2f", amount * courses["RUB"]!)) ₽"
+        case .EUR : resultLabet.text =  "\( String(format: "%.2f", amount *  courses["EUR"]!)) €"
+        case .CNY : resultLabet.text =  "\( String(format: "%.2f", amount * courses["CNY"]!)) ¥"
+        case .CHF : resultLabet.text =  "\( String(format: "%.2f", amount /  courses["CHF"]!)) ₣"
+        default: break
+            }
+        }
+
+
+        if selectedButton == .EUR {
+        switch selectedResultButton {
+        case .USD : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["EUR"]!) * amount)) $"
+        case .RUB : resultLabet.text =  "\( String(format: "%.2f",  (courses["RUB"]! / courses["EUR"]!) * amount) ) ₽"
+        case .CNY : resultLabet.text =  "\( String(format: "%.2f", (courses["CNY"]! / courses["EUR"]!) * amount )) ¥"
+        case .CHF : resultLabet.text =  "\( String(format: "%.2f", (courses["CHF"]! / courses["EUR"]!) * amount)) ₣"
         default: break
         }
-    }
-
-    if selectedButton == .USD {
-    switch sender {
-    case rurResultButton : resultLabet.text = "\(String(format: "%.2f", amount * courses["RUB"]!)) ₽"
-    case euroResultButton : resultLabet.text =  "\( String(format: "%.2f", amount *  courses["EUR"]!)) €"
-    case yuanResultButton : resultLabet.text =  "\( String(format: "%.2f", amount * courses["CNY"]!)) ¥"
-    case fruncResultButton : resultLabet.text =  "\( String(format: "%.2f", amount /  courses["CHF"]!)) ₣"
-    default: break
         }
-    }
 
+        if selectedButton == .CNY {
+        switch selectedResultButton {
+        case .USD : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["CNY"]!) * amount)) $"
+        case .RUB : resultLabet.text =  "\( String(format: "%.2f",  (courses["RUB"]! / courses["CNY"]!) * amount)) ₽"
+        case .EUR : resultLabet.text =  "\( String(format: "%.2f", (courses["EUR"]! / courses["CNY"]!) * amount )) €"
+        case .CHF : resultLabet.text =  "\( String(format: "%.2f", (courses["CHF"]! / courses["CNY"]!) * amount)) ₣"
+        default: break
+        }
+        }
 
-    if selectedButton == .EUR {
-    switch sender {
-    case dollarResultButtont : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["EUR"]!) * amount)) $"
-    case rurResultButton : resultLabet.text =  "\( String(format: "%.2f",  (courses["RUB"]! / courses["EUR"]!) * amount) ) ₽"
-    case yuanResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["CNY"]! / courses["EUR"]!) * amount )) ¥"
-    case fruncResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["CHF"]! / courses["EUR"]!) * amount)) ₣"
-    default: break
-    }
-    }
-
-    if selectedButton == .CNY {
-    switch sender {
-    case dollarResultButtont : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["CNY"]!) * amount)) $"
-    case rurResultButton : resultLabet.text =  "\( String(format: "%.2f",  (courses["RUB"]! / courses["CNY"]!) * amount)) ₽"
-    case euroResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["EUR"]! / courses["CNY"]!) * amount )) €"
-    case fruncResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["CHF"]! / courses["CNY"]!) * amount)) ₣"
-    default: break
-    }
-    }
-
-    if selectedButton == .CHF {
-    switch sender {
-    case dollarResultButtont : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["CHF"]!) * amount)) $"
-    case rurResultButton : resultLabet.text =  "\( String(format: "%.2f",  (courses["RUB"]! / courses["CHF"]!) * amount)) ₽"
-    case euroResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["EUR"]! / courses["CHF"]!) * amount )) €"
-    case yuanResultButton : resultLabet.text =  "\( String(format: "%.2f", (courses["CNY"]! / courses["CHF"]!) * amount)) ¥"
-    default: break
-    }
-    }
+        if selectedButton == .CHF {
+        switch selectedResultButton {
+        case .USD : resultLabet.text = "\(String(format: "%.2f", (courses["USD"]! / courses["CHF"]!) * amount)) $"
+        case .RUB : resultLabet.text =  "\( String(format: "%.2f",  (courses["RUB"]! / courses["CHF"]!) * amount)) ₽"
+        case .EUR : resultLabet.text =  "\( String(format: "%.2f", (courses["EUR"]! / courses["CHF"]!) * amount )) €"
+        case .CNY : resultLabet.text =  "\( String(format: "%.2f", (courses["CNY"]! / courses["CHF"]!) * amount)) ¥"
+        default: break
+        }
+        }
+        
     }
     
     
@@ -456,7 +469,19 @@ extension ViewController: UITextFieldDelegate {
     
     func textFieldDidChangeSelection(_ textField: UITextField) {
         
+        if arrowImage.isHidden != false {
+//            self.resultLabet.scaleAnimation()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.result(sender: self.selectedResultButton)
+            }
+        }
+        
+        if textField.text == "" {
+            resultLabet.text = "0 \(selectedResultButton.rawValue)"
+        }
     }
+    
+    
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
